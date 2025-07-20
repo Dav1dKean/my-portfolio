@@ -86,7 +86,7 @@ export default function FoundationCareerPage() {
               </div>
 
               <div>
-                <h4 className="text-lg font-semibold mb-2">Let's Connect</h4>
+                <h4 className="text-lg font-semibold mb-2">Let us Connect</h4>
                 <p className="mb-4">
                   Interested in my journey or have advice to share? I would love to hear from you.
                 </p>

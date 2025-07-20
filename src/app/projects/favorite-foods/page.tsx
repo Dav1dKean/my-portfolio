@@ -46,7 +46,7 @@ export default function FavoriteFoods() {
                 title: 'Salvadorean Food',
                 image: '/pupusas.jpg',
                 alt: 'Salvadorean pupusas with curtido',
-                description: 'Famous for pupusas! These thick, handmade corn tortillas are filled with cheese, beans, or meat.',
+                description: 'Famous for pupusas! These thick, handmade corn tortillas are filled with cheese, beans, or meat. It&#39;s one of my absolute favorites.',
               },
             ].map((food, idx) => (
               <div key={idx} className="bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden shadow-md">
@@ -64,7 +64,7 @@ export default function FavoriteFoods() {
           <div className="text-center">
             <h3 className="text-2xl font-semibold mb-2 text-gray-800 dark:text-white">What is Your Favorite?</h3>
             <p className="text-gray-600 dark:text-gray-300 mb-6">
-              Let me know your favorite food or send a recipe!
+              Let me know your favorite food or send a recipe
             </p>
             <div className="flex flex-wrap justify-center gap-2 mb-8">
               <button className="bg-blue-100 text-blue-700 px-4 py-2 rounded-full">Primary Light</button>
