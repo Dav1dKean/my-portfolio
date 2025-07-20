@@ -62,7 +62,7 @@ export default function FavoriteFoods() {
           <hr className="my-12" />
 
           <div className="text-center">
-            <h3 className="text-2xl font-semibold mb-2 text-gray-800 dark:text-white">What's Your Favorite?</h3>
+            <h3 className="text-2xl font-semibold mb-2 text-gray-800 dark:text-white">What is Your Favorite?</h3>
             <p className="text-gray-600 dark:text-gray-300 mb-6">
               Let me know your favorite food or send a recipe!
             </p>

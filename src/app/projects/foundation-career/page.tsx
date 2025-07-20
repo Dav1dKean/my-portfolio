@@ -26,7 +26,7 @@ export default function FoundationCareerPage() {
                 {
                   title: 'Software Engineer at Google',
                   description:
-                    'My goal is to work on large-scale systems and innovative products that impact millions of users. I’m passionate about problem-solving and clean code.',
+                    'My goal is to work on large-scale systems and innovative products that impact millions of users. I am passionate about problem-solving and clean code.',
                   image: '/aspire-google.jpg',
                 },
                 {
@@ -88,7 +88,7 @@ export default function FoundationCareerPage() {
               <div>
                 <h4 className="text-lg font-semibold mb-2">Let's Connect</h4>
                 <p className="mb-4">
-                  Interested in my journey or have advice to share? I’d love to hear from you.
+                  Interested in my journey or have advice to share? I would love to hear from you.
                 </p>
                 <div className="space-x-2">
                   <a href="#contact" className="bg-blue-600 text-white px-4 py-2 rounded">
