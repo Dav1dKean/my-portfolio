@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Space Shooter - [Your Name Here]</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link
+href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap"
+rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+<style>
+body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #0a0a1a; font-family: 'Orbitron', sans-serif; color: #fff; overflow: hidden; }
+canvas { background-color: #000; border-radius: 10px; box-shadow: 0 0 20px rgba(0, 255, 255, 0.5); display: block; cursor: pointer; }
+#game-container { text-align: center; }
+h1 { color: #00ffff; text-shadow: 0 0 10px #00ffff; }
+</style>
+</head>
+<body>
+<div id="game-container">
+<h1 id="game-title">Space Shooter - By David</h1>
+<canvas id="gameCanvas"></canvas>
+</div>
+<script>
+// --- Basic Setup ---
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = 800;
+canvas.height = 600;
+
+// --- Sound Engine (Tone.js) ---
+const collisionSound = new Tone.Synth({ oscillator: { type: 'fmsquare' }, envelope: { attack: 0.01, decay: 0.2, sustain: 0.1, release: 0.1 } }).toDestination();
+const shootSound = new Tone.Synth({ volume: -10, oscillator: { type: 'triangle' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.05, release: 0.1 } }).toDestination();
+
+// --- Game Assets ---
+const assets = {
+    player: new Image(), bullet: new Image(), asteroid: new Image(),
+    chaser: new Image(), dodger: new Image(), shieldPowerUp: new Image(),
+    fuelPowerUp: new Image(), fastShootPowerUp: new Image(), boss: new Image(), bossBullet: new Image(),
+};
+assets.player.src = '/spaceship.png'
+assets.bullet.src = 'https://placehold.co/16x16/ffff00/000000?text=!';
+assets.asteroid.src = 'https://placehold.co/64x64/ff0000/ffffff?text=A';
+assets.chaser.src = 'https://placehold.co/50x50/ff8800/ffffff?text=C';
+assets.dodger.src = 'https://placehold.co/50x50/ff00ff/ffffff?text=D';
+assets.shieldPowerUp.src = 'https://placehold.co/40x40/00ff00/000000?text=S';      // S = Shield
+assets.fuelPowerUp.src = 'https://placehold.co/40x40/ffffff/000000?text=F';         // F = Fuel
+assets.fastShootPowerUp.src = 'https://placehold.co/40x40/ffcc00/000000?text=x2';  // x2 = Fast Shoot Power-up
+assets.boss.src = 'https://placehold.co/150x150/ff4500/ffffff?text=BOSS';
+assets.bossBullet.src = 'https://placehold.co/20x20/ff4500/ffffff?text=X';
+
+// --- Game State & Configuration ---
+let score = 0;
+let gameOver = false;
+let gameStarted = false;
+let scoreSaved = false;
+let bossFightActive = false;
+let boss = null;
+const keys = {};
+let currentPlayerName = 'Player';
+let assetsLoaded = false;
+
+// --- Player Class ---
+class Player {
+constructor(name) {
+    this.width = 64; this.height = 64;
+    this.x = canvas.width / 2 - this.width / 2;
+    this.y = canvas.height - this.height - 20;
+    this.speed = 7;
+    this.name = name;
+    this.bullets = [];
+    this.shootCooldown = 0;
+    this.baseShootCooldown = 15;
+    this.maxFuel = 100;
+    this.fuel = this.maxFuel;
+    this.shieldActive = false;
+    this.shieldTimer = 0;
+    this.fastShootActive = false;
+    this.fastShootTimer = 0;
+}
+update(deltaTime) {
+    if (keys['ArrowLeft'] && this.x > 0) this.x -= this.speed;
+    if (keys['ArrowRight'] && this.x < canvas.width - this.width) this.x += this.speed;
+    const currentCooldown = this.fastShootActive ? this.baseShootCooldown / 3 : this.baseShootCooldown;
+    if (keys[' '] && this.shootCooldown <= 0) { this.shoot(); this.shootCooldown = currentCooldown; }
+    if (this.shootCooldown > 0) this.shootCooldown--;
+    this.bullets.forEach((bullet, index) => { bullet.update(); if (bullet.y < 0) this.bullets.splice(index, 1); });
+    this.fuel -= 0.05;
+    if (this.fuel <= 0) gameOver = true;
+    if (this.shieldActive) { this.shieldTimer--; if (this.shieldTimer <= 0) this.shieldActive = false; }
+    if (this.fastShootActive) { this.fastShootTimer--; if (this.fastShootTimer <= 0) this.fastShootActive = false; }
+}
+draw() {
+    ctx.drawImage(assets.player, this.x, this.y, this.width, this.height);
+    const centerX = this.x + this.width / 2;
+    ctx.fillStyle = '#39FF14';
+    ctx.font = '16px Orbitron';
+    ctx.textAlign = 'center';
+    ctx.fillText(this.name, centerX, this.y - 10);
+    const centerY = this.y + this.height / 2;
+    if (this.shieldActive) {
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, this.width / 2 + 10, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0, 255, 255, 0.3)';
+        ctx.fill();
+    }
+    if (this.fastShootActive) {
+        ctx.fillStyle = 'rgba(255, 204, 0, 0.8)';
+        ctx.font = '16px Orbitron';
+        ctx.fillText('RAPID FIRE!', centerX, this.y + this.height + 20);
+    }
+    this.bullets.forEach(bullet => bullet.draw());
+}
+shoot() { shootSound.triggerAttackRelease("C5", "16n"); this.bullets.push(new Bullet(this.x + this.width / 2, this.y)); }
+activateShield() { this.shieldActive = true; this.shieldTimer = 300; }
+addFuel() { this.fuel = Math.min(this.maxFuel, this.fuel + 40); }
+activateFastShoot() { this.fastShootActive = true; this.fastShootTimer = 480; }
+}
+
+// (The rest of the game object classes like Bullet, Competitor, PowerUp, Boss remain the same)
+class Bullet { constructor(x, y) { this.width = 16; this.height = 16; this.x = x - this.width / 2; this.y = y; this.speed = 10; } update() { this.y -= this.speed; } draw() { ctx.drawImage(assets.bullet, this.x, this.y, this.width, this.height); } }
+class Competitor { constructor(image, width, height, speed) { this.image = image; this.width = width; this.height = height; this.x = Math.random() * (canvas.width - this.width); this.y = -this.height; this.speed = speed; } update() { this.y += this.speed; } draw() { ctx.drawImage(this.image, this.x, this.y, this.width, this.height); } }
+class Asteroid extends Competitor { constructor() { super(assets.asteroid, 64, 64, Math.random() * 2 + 2); } }
+class Chaser extends Competitor { constructor() { super(assets.chaser, 50, 50, Math.random() * 1.5 + 1); } update() { super.update(); if (player.x > this.x) this.x += this.speed * 0.5; else this.x -= this.speed * 0.5; } }
+class Dodger extends Competitor { constructor() { super(assets.dodger, 50, 50, Math.random() * 3 + 3); } update() { super.update(); player.bullets.forEach(bullet => { const dist = Math.hypot(bullet.x - this.x, bullet.y - this.y); if (dist < 150) { if (bullet.x < this.x) this.x += 2; else this.x -= 2; } }); if (this.x < 0) this.x = 0; if (this.x > canvas.width - this.width) this.x = canvas.width - this.width; } }
+class PowerUp { constructor(image, width, height) { this.image = image; this.width = width; this.height = height; this.x = Math.random() * (canvas.width - this.width); this.y = -this.height; this.speed = 2; } update() { this.y += this.speed; } draw() { ctx.drawImage(this.image, this.x, this.y, this.width, this.height); } }
+class ShieldPowerUp extends PowerUp { constructor() { super(assets.shieldPowerUp, 40, 40); } }
+class FuelPowerUp extends PowerUp { constructor() { super(assets.fuelPowerUp, 40, 40); } }
+class FastShootPowerUp extends PowerUp { constructor() { super(assets.fastShootPowerUp, 40, 40); } }
+class Boss { constructor() { this.width = 150; this.height = 150; this.x = canvas.width / 2 - this.width / 2; this.y = -this.height; this.speed = 2; this.health = 100; this.maxHealth = 100; this.bullets = []; this.shootCooldown = 0; this.movePhase = 'entering'; this.direction = 1; } update() { switch (this.movePhase) { case 'entering': this.y += this.speed; if (this.y >= 50) { this.y = 50; this.movePhase = 'strafing'; } break; case 'strafing': this.x += this.speed * this.direction; if (this.x <= 0 || this.x + this.width >= canvas.width) { this.direction *= -1; } break; } this.shootCooldown--; if (this.shootCooldown <= 0) { this.shoot(); this.shootCooldown = 90; } this.bullets.forEach((bullet, index) => { bullet.update(); if (bullet.y > canvas.height) this.bullets.splice(index, 1); }); } draw() { ctx.drawImage(assets.boss, this.x, this.y, this.width, this.height); ctx.fillStyle = 'red'; ctx.fillRect(this.x, this.y - 20, this.width, 10); ctx.fillStyle = 'lime'; ctx.fillRect(this.x, this.y - 20, (this.health / this.maxHealth) * this.width, 10); this.bullets.forEach(b => b.draw()); } shoot() { const centerX = this.x + this.width / 2; this.bullets.push(new BossBullet(centerX, this.y + this.height, 0)); this.bullets.push(new BossBullet(centerX, this.y + this.height, -2)); this.bullets.push(new BossBullet(centerX, this.y + this.height, 2)); } }
+class BossBullet { constructor(x, y, speedX) { this.width = 20; this.height = 20; this.x = x - this.width / 2; this.y = y; this.speedY = 4; this.speedX = speedX; } update() { this.y += this.speedY; this.x += this.speedX; } draw() { ctx.drawImage(assets.bossBullet, this.x, this.y, this.width, this.height); } }
+
+// --- Game Initialization & Reset ---
+let player; 
+let competitors = [];
+let powerUps = [];
+let competitorSpawnTimer = 100;
+let powerUpSpawnTimer = 500;
+
+function resetGame() {
+    player = new Player(currentPlayerName);
+    competitors = [];
+    powerUps = [];
+    score = 0;
+    gameOver = false;
+    gameStarted = true;
+    bossFightActive = false;
+    boss = null;
+    scoreSaved = false;
+    competitorSpawnTimer = 100;
+    powerUpSpawnTimer = 500;
+    requestAnimationFrame(gameLoop);
+}
+
+// (Collision, Spawning, and other logic remains the same)
+function checkCollisions() { player.bullets.forEach((bullet, bIndex) => { competitors.forEach((competitor, cIndex) => { if (bullet.x < competitor.x + competitor.width && bullet.x + bullet.width > competitor.x && bullet.y < competitor.y + competitor.height && bullet.y + bullet.height > competitor.y) { player.bullets.splice(bIndex, 1); competitors.splice(cIndex, 1); score += 10; } }); }); if (!player.shieldActive) { competitors.forEach((competitor) => { if (player.x < competitor.x + competitor.width && player.x + player.width > competitor.x && player.y < competitor.y + competitor.height && player.y + player.height > competitor.y) { collisionSound.triggerAttackRelease("C2", "8n"); gameOver = true; } }); } powerUps.forEach((powerUp, pIndex) => { if (player.x < powerUp.x + powerUp.width && player.x + player.width > powerUp.x && player.y < powerUp.y + powerUp.height && player.y + player.height > powerUp.y) { powerUps.splice(pIndex, 1); if (powerUp instanceof ShieldPowerUp) player.activateShield(); else if (powerUp instanceof FuelPowerUp) player.addFuel(); else if (powerUp instanceof FastShootPowerUp) player.activateFastShoot(); } }); if (bossFightActive && boss) { player.bullets.forEach((bullet, bIndex) => { if (bullet.x < boss.x + boss.width && bullet.x + bullet.width > boss.x && bullet.y < boss.y + boss.height && bullet.y + bullet.height > boss.y) { player.bullets.splice(bIndex, 1); boss.health -= 1; score += 25; if (boss.health <= 0) { score += 5000; bossFightActive = false; boss = null; } } }); if (!player.shieldActive) { boss.bullets.forEach((bullet, bIndex) => { if (player.x < bullet.x + bullet.width && player.x + player.width > bullet.x && player.y < bullet.y + bullet.height && player.y + player.height > bullet.y) { boss.bullets.splice(bIndex, 1); gameOver = true; } }); } } }
+function handleSpawning() { if (bossFightActive) return; competitorSpawnTimer--; if (competitorSpawnTimer <= 0) { const rand = Math.random(); if (rand < 0.6) competitors.push(new Asteroid()); else if (rand < 0.85) competitors.push(new Chaser()); else competitors.push(new Dodger()); competitorSpawnTimer = Math.max(20, 100 - score / 20); } powerUpSpawnTimer--; if (powerUpSpawnTimer <= 0) { const rand = Math.random(); if (rand < 0.4) powerUps.push(new ShieldPowerUp()); else if (rand < 0.8) powerUps.push(new FuelPowerUp()); else powerUps.push(new FastShootPowerUp()); powerUpSpawnTimer = Math.random() * 500 + 400; } }
+function checkForBossFight() { if (!bossFightActive && score >= 1000) { bossFightActive = true; competitors = []; powerUps = []; boss = new Boss(); } }
+
+// --- Drawing / Rendering ---
+function drawUI() { ctx.fillStyle = 'white'; ctx.font = '30px Orbitron'; ctx.textAlign = 'left'; ctx.fillText(`Score: ${score}`, 20, 40); ctx.fillStyle = '#555'; ctx.fillRect(canvas.width - 220, 20, 200, 25); const fuelColor = player.fuel < 25 ? 'red' : 'green'; ctx.fillStyle = fuelColor; ctx.fillRect(canvas.width - 220, 20, (player.fuel / player.maxFuel) * 200, 25); ctx.strokeStyle = 'white'; ctx.strokeRect(canvas.width - 220, 20, 200, 25); ctx.fillStyle = 'white'; ctx.font = '16px Orbitron'; ctx.fillText('FUEL', canvas.width - 270, 38); }
+function drawStartScreen() { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = 'white'; ctx.textAlign = 'center'; ctx.font = '50px Orbitron'; ctx.fillText('SPACE SHOOTER', canvas.width / 2, canvas.height / 2 - 100); ctx.font = '24px Orbitron'; ctx.fillText('Use Arrow Keys to Move, Space to Shoot', canvas.width / 2, canvas.height / 2 - 30); ctx.font = '20px Orbitron'; ctx.fillStyle = 'yellow'; ctx.fillText('Power-ups: [S] Shield | [F] Fuel | [x2] Rapid Fire', canvas.width / 2, canvas.height / 2 + 15); ctx.font = '30px Orbitron'; ctx.fillStyle = '#00ffff'; ctx.fillText('Click to Start', canvas.width / 2, canvas.height / 2 + 80); }
+function getHighScores() { const scoresJSON = localStorage.getItem('highScores'); return scoresJSON ? JSON.parse(scoresJSON) : []; }
+function saveHighScore(name, score) { const scores = getHighScores(); const newEntry = { name, score }; scores.push(newEntry); scores.sort((a, b) => b.score - a.score); const top5 = scores.slice(0, 5); localStorage.setItem('highScores', JSON.stringify(top5)); }
+
+// UPDATED: Now handles the case where there are no high scores to display.
+function drawGameOverScreen(highScores) {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'red'; ctx.textAlign = 'center';
+    ctx.font = '70px Orbitron';
+    ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 150);
+    ctx.fillStyle = 'white';
+    ctx.font = '30px Orbitron';
+    ctx.fillText(`Final Score: ${score}`, canvas.width / 2, canvas.height / 2 - 90);
+    ctx.font = '28px Orbitron';
+    ctx.fillStyle = '#00ffff';
+    ctx.fillText('High Scores', canvas.width / 2, canvas.height / 2 - 20);
+    
+    ctx.font = '22px Orbitron';
+    ctx.fillStyle = 'white';
+
+    // NEW: Check if the highScores array is empty.
+    if (highScores.length === 0) {
+        ctx.font = '18px Orbitron';
+        ctx.fillStyle = 'grey';
+        ctx.fillText('No scores recorded yet.', canvas.width / 2, canvas.height / 2 + 20);
+    } else {
+        // If scores exist, display them.
+        highScores.forEach((entry, index) => {
+            const scoreText = entry.score.toString().padStart(6, ' ');
+            ctx.fillText(`${index + 1}. ${entry.name} - ${scoreText}`, canvas.width / 2, canvas.height / 2 + 20 + (index * 30));
+        });
+    }
+
+    ctx.font = '24px Orbitron';
+    ctx.fillStyle = 'white'; // Reset color for the text below
+    ctx.fillText('Click to Play Again', canvas.width / 2, canvas.height / 2 + 180);
+    ctx.font = '14px Orbitron';
+    ctx.fillStyle = 'grey';
+    ctx.fillText('Game by [Your Name Here]', canvas.width / 2, canvas.height - 20);
+}
+
+// --- Main Game Loop ---
+let lastTime = 0;
+function gameLoop(timestamp) {
+    if (!gameStarted) return;
+    if (gameOver) {
+        if (!scoreSaved) {
+            saveHighScore(currentPlayerName, score);
+            scoreSaved = true;
+        }
+        const highScores = getHighScores();
+        drawGameOverScreen(highScores);
+        return;
+    }
+    const deltaTime = timestamp - lastTime;
+    lastTime = timestamp;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    player.update(deltaTime);
+    competitors.forEach((c, i) => { c.update(); if (c.y > canvas.height) competitors.splice(i, 1); });
+    powerUps.forEach((p, i) => { p.update(); if (p.y > canvas.height) powerUps.splice(i, 1); });
+    if (bossFightActive && boss) { boss.update(); }
+    checkForBossFight();
+    handleSpawning();
+    checkCollisions();
+    player.draw();
+    competitors.forEach(c => c.draw());
+    powerUps.forEach(p => p.draw());
+    if (bossFightActive && boss) { boss.draw(); }
+    drawUI();
+    requestAnimationFrame(gameLoop);
+}
+
+// --- Event Listeners ---
+window.addEventListener('keydown', (e) => { keys[e.key] = true; });
+window.addEventListener('keyup', (e) => { keys[e.key] = false; });
+canvas.addEventListener('click', () => {
+    if (!assetsLoaded) return;
+    if (Tone.context.state !== 'running') { Tone.start(); }
+    if (!gameStarted || gameOver) {
+        const name = prompt("Enter your name to begin:", currentPlayerName);
+        currentPlayerName = (name && name.trim()) ? name.trim() : "Player";
+        resetGame();
+    }
+});
+
+// --- Initial Draw ---
+assets.player.onload = () => {
+    assetsLoaded = true;
+    drawStartScreen();
+};
+</script>
+</body>
+</html>
