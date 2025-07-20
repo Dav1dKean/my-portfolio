@@ -49,7 +49,7 @@ export default function Chatbox() {
       className="fixed bottom-4 right-4 z-50 w-[90%] sm:w-full max-w-sm bg-white/90 dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-3 backdrop-blur-md"
 
     >
-      <div className="max-h-36 sm:max-h-48 overflow-y-auto p-2 space-y-2 text-sm">
+      <div className="max-h-40 sm:max-h-48 overflow-y-auto p-2 space-y-2 text-sm">
 
         <AnimatePresence initial={false}>
           {messages.map((msg, idx) => (
