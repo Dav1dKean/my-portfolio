@@ -1,4 +1,4 @@
-// src/projects/favorite-foods/page.tsx
+// src/app/projects/favorite-foods/page.tsx
 'use client';
 
 import Head from 'next/head';
@@ -46,7 +46,7 @@ export default function FavoriteFoods() {
                 title: 'Salvadorean Food',
                 image: '/pupusas.jpg',
                 alt: 'Salvadorean pupusas with curtido',
-                description: 'Famous for pupusas! These thick, handmade corn tortillas are filled with cheese, beans, or meat. It&#39;s one of my absolute favorites.',
+                description: 'Famous for pupusas! These thick, handmade corn tortillas are filled with cheese, beans, or meat.',
               },
             ].map((food, idx) => (
               <div key={idx} className="bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden shadow-md">

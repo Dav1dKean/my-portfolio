@@ -13,7 +13,7 @@ export default function ContactPage() {
         <div className="max-w-3xl mx-auto">
           <h1 className="text-4xl font-bold mb-6 text-center">Contact Me</h1>
           <p className="text-lg text-center mb-10">
-            I would love to hear from you. Fill out the form below and I will get back to you soon.
+            I would love to hear from you. Please fill out the form below, and I will respond as soon as I can.
           </p>
 
           <form className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-8 space-y-6">

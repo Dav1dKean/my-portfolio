@@ -27,7 +27,7 @@ export default function Chatbox() {
       if (data.reply) {
         setMessages([...newMessages, { role: 'assistant', content: data.reply }]);
       }
-    } catch (err) {
+    } catch {
       setMessages([...newMessages, { role: 'assistant', content: 'Error: could not get response.' }]);
     } finally {
       setLoading(false);

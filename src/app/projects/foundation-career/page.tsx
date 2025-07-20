@@ -1,6 +1,7 @@
 'use client';
 
 import Head from 'next/head';
+import Image from 'next/image';
 
 export default function FoundationCareerPage() {
   return (
@@ -43,7 +44,13 @@ export default function FoundationCareerPage() {
                 },
               ].map((card, idx) => (
                 <div key={idx} className="bg-white rounded-lg shadow-md overflow-hidden">
-                  <img src={card.image} alt={card.title} className="w-full h-48 object-cover" />
+                  <Image
+                    src={card.image}
+                    alt={card.title}
+                    width={400}
+                    height={200}
+                    className="w-full h-48 object-cover"
+                  />
                   <div className="p-4 bg-black bg-opacity-70 text-white">
                     <h4 className="text-lg font-semibold">{card.title}</h4>
                     <p className="mt-2">{card.description}</p>
