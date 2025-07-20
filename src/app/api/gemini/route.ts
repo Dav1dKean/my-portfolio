@@ -14,6 +14,7 @@ Here is his personal background and preferences:
 - He likes Japanese culture and enjoys reading.
 - He is bilingual, speaks Spanish and English.
 - He enjoys going to the beach, pizza, and ice cream.
+- Favorite season: Fall
 
 
 Resume Summary:
@@ -46,7 +47,9 @@ export async function POST(req: Request) {
 
   try {
     const fullPrompt = `${systemPrompt}\n\n${messages
-      .map((m: any) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
+      .map((m: { role: 'user' | 'assistant'; content: string }) =>
+  `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`
+)
       .join('\n')}`;
 
     const result = await model.generateContent(fullPrompt);
