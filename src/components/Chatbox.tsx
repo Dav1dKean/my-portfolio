@@ -42,15 +42,27 @@ export default function Chatbox() {
   };
 
   return (
+
     <motion.div
       initial={{ opacity: 0, y: 100 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: 'easeOut' }}
-      className="fixed bottom-4 right-4 z-50 w-[90%] sm:w-full max-w-sm bg-white/90 dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-3 backdrop-blur-md"
-
+      className="fixed bottom-6 right-6 z-50 w-full max-w-sm bg-white/90 dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 backdrop-blur-md"
     >
-      <div className="max-h-40 sm:max-h-48 overflow-y-auto p-2 space-y-2 text-sm">
 
+      {/* ✅ Title Bar */}
+      <div className="flex items-center justify-between px-3 py-2 bg-blue-600 text-white rounded-t-xl font-semibold text-sm">
+        <span>Ask David AI Assistant</span>
+        <button
+          onClick={() => setMessages([])}
+          className="text-xs text-white bg-blue-500 px-2 py-1 rounded hover:bg-blue-700"
+        >
+          Clear
+        </button>
+      </div>
+
+      {/* ✅ Message area */}
+      <div className="h-48 max-h-48 overflow-y-auto p-2 space-y-2 text-sm">
         <AnimatePresence initial={false}>
           {messages.map((msg, idx) => (
             <motion.div
@@ -59,11 +71,10 @@ export default function Chatbox() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: msg.role === 'user' ? 50 : -50 }}
               transition={{ duration: 0.3 }}
-              className={`p-2 rounded-lg ${
-                msg.role === 'user'
-                  ? 'bg-blue-100 text-blue-900'
-                  : 'bg-gray-200 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
-              }`}
+              className={`p-2 rounded-lg ${msg.role === 'user'
+                ? 'bg-blue-100 text-blue-900'
+                : 'bg-gray-200 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
+                }`}
             >
               <strong>{msg.role === 'user' ? 'You' : 'Assistant'}:</strong> {msg.content}
             </motion.div>
@@ -72,7 +83,8 @@ export default function Chatbox() {
         {loading && <div className="italic text-gray-500">Assistant is typing...</div>}
       </div>
 
-      <div className="mt-2 flex gap-2 items-center">
+      {/* ✅ Input area */}
+      <div className="mt-2 flex gap-2 items-center px-3 pb-3">
         <textarea
           className="flex-1 resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           rows={2}
@@ -90,5 +102,6 @@ export default function Chatbox() {
         </button>
       </div>
     </motion.div>
+
   );
 }
