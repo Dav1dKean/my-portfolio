@@ -31,7 +31,7 @@ Background:
 - Bilingual (English & Spanish)
 - Enjoys the beach, pizza, and ice cream
 - Favorite season: Fall
-- Favorite person at Kean: Ummu
+
 
 Education:
 - M.S. in Computer Information Systems - Kean University (Expected December 2026)
